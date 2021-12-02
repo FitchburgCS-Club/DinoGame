@@ -1,4 +1,4 @@
-dist_doc_DATA = README
+dist_doc_DATA = README.md
 bin_PROGRAMS = dinogame
 dinogame_SOURCES = src/main.c
 dist_man_MANS = man/dinogame.6
