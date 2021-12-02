@@ -1,0 +1,18 @@
+# Autotools Files
+autom4te.cache
+*.in
+Makefile
+stamp-h1
+config.log
+configure
+config.h
+
+# Dependencies
+.deps
+
+# Temp Files
+*~
+
+# Binaries
+*.o
+dinogame
