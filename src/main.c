@@ -3,13 +3,10 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_timer.h>
 
-//TODO (Zack): Make window size dynamically
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
-
 #define FPS 60
 
 int main(int argc, char *argv[]) {
+	int scr_width = 640, scr_height = 480;
 	SDL_Window* window = NULL;
 	SDL_Surface* screenSurface = SDL_CreateRGBSurface(0, 32, 32, 32, 0, 0, 0, 0);
 	if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) < 0) {
@@ -19,7 +16,7 @@ int main(int argc, char *argv[]) {
 	window = SDL_CreateWindow(
 			"Dino Game",
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-			SCREEN_WIDTH, SCREEN_HEIGHT,
+			scr_width, scr_height,
 			SDL_WINDOW_SHOWN
 			);
 	if (window == NULL) {
@@ -40,8 +37,8 @@ int main(int argc, char *argv[]) {
 	SDL_QueryTexture(tex, NULL, NULL, &dest.w, &dest.h);
 
 	// sets initial position of object
-	dest.x = (SCREEN_WIDTH - dest.w) / 2;
-	dest.y = (SCREEN_HEIGHT - dest.h) / 2;
+	dest.x = (scr_width - dest.w) / 2;
+	dest.y = (scr_height - dest.h) / 2;
 
 	int running = 1;
 
@@ -76,7 +73,32 @@ int main(int argc, char *argv[]) {
 						case SDL_SCANCODE_RIGHT:
 							dest.x += speed / 30;
 							break;
+						case SDL_SCANCODE_DELETE:
+							SDL_GetWindowSize(window, &scr_width, &scr_height);
+							switch (scr_width) {
+								case 1280:
+									SDL_SetWindowSize(window, 640, 480);
+									break;
+								case 640:
+									SDL_SetWindowSize(window, 1280, 720);
+									break;
+								default:
+									exit(1);
+							}
+							break;
 						default:
+							break;
+					}
+					break;
+				case SDL_WINDOWEVENT:
+					switch (event.window.event) {
+						case SDL_WINDOWEVENT_SIZE_CHANGED:
+							// Dummy printf because case statments have to start with expressions.
+							printf("");
+							int oW = scr_width, oH = scr_height;
+							SDL_GetWindowSize(window, &scr_width, &scr_height);
+							dest.x *= (scr_width / (float)oW);
+							dest.y *= (scr_height / (float)oH);
 							break;
 					}
 					break;
@@ -84,16 +106,16 @@ int main(int argc, char *argv[]) {
 		}
 
 		// right boundary
-		if (dest.x + dest.w > SCREEN_WIDTH)
-			dest.x = SCREEN_WIDTH - dest.w;
+		if (dest.x + dest.w > scr_width)
+			dest.x = scr_width - dest.w;
 
 		// left boundary
 		if (dest.x < 0)
 			dest.x = 0;
 
 		// bottom boundary
-		if (dest.y + dest.h > SCREEN_HEIGHT)
-			dest.y = SCREEN_HEIGHT - dest.h;
+		if (dest.y + dest.h > scr_height)
+			dest.y = scr_height - dest.h;
 
 		// upper boundary
 		if (dest.y < 0)
