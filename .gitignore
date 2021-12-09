@@ -4,6 +4,7 @@ autom4te.cache
 Makefile
 stamp-h1
 config.log
+config.status
 configure
 config.h
 
