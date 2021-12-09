@@ -7,7 +7,7 @@ AC_CONFIG_FILES([
 	Makefile
 ])
 AC_SEARCH_LIBS([SDL_Init], [SDL2], [], [AC_MSG_ERROR([Unable to find SDL2])])
-AC_CHECK_HEADERS([SDL2/SDL_image.h],[],[AC_MSG_ERROR([Unable to find SDL2_Image])])
+AC_SEARCH_LIBS([IMG_Init], [SDL2_image], [], [AC_MSG_ERROR([Unable to find SDL2_image])])
 AC_ARG_ENABLE([debug],
 [  --enable-debug    Turn on debugging],
 [case "${enableval}" in
