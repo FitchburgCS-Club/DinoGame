@@ -3,9 +3,11 @@ autom4te.cache
 *.in
 Makefile
 stamp-h1
-config.log
 config.status
 config.h
+
+# Logs
+*.log
 
 # Dependencies
 .deps
