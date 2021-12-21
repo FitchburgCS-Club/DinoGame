@@ -1,17 +1,44 @@
-#include <stdio.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_timer.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include "entities.h"
+#include "errors.h"
+#include "macros.h"
 
 #define FPS 60
 
+Animation *getAnims(char *path) {
+	FILE *animFile = fopen(path, "r");
+	if (animFile == NULL) {
+		perror("fopen");
+		exit(ANIM_LOAD_ERR);
+	}
+	unsigned char nAnims;
+	fread(&nAnims,1,1,animFile);
+	Animation *anims = malloc(sizeof(Animation)*nAnims);
+	for (unsigned char i = 0; i < nAnims; i++) {
+		fread(&anims[i].nFrames, 1, 1, animFile);
+		fread(&anims[i].fps, 1, 1, animFile);
+		anims[i].frames = malloc(sizeof(SDL_Rect) * anims[i].nFrames);
+		fread(anims[i].frames, sizeof(SDL_Rect), anims[i].nFrames, animFile);
+	}
+	return anims;
+}
+
 int main(int argc, char *argv[]) {
+	// TODO: Add menu of some kind to change window size
 	int scr_width = 640, scr_height = 480;
 	SDL_Window* window = NULL;
-	SDL_Surface* screenSurface = SDL_CreateRGBSurface(0, 32, 32, 32, 0, 0, 0, 0);
 	if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) < 0) {
-		printf("could not initialize sdl2: %s\n", SDL_GetError());
-		return 1;
+		eprintf("Could not initialize SDL2: %s\n", SDL_GetError());
+		return INIT_ERR;
+	}
+	int iFlags = IMG_INIT_PNG;
+	if(IMG_Init(iFlags) != iFlags) {
+		eprintf("Could not initialize SDL2_Image\n");
+		return INIT_ERR;
 	}
 	window = SDL_CreateWindow(
 			"Dino Game",
@@ -20,35 +47,37 @@ int main(int argc, char *argv[]) {
 			SDL_WINDOW_SHOWN
 			);
 	if (window == NULL) {
-		printf("could not create window: %s\n", SDL_GetError());
-		return 1;
+		eprintf("Could not create window: %s\n", SDL_GetError());
+		return GENERIC_ERR;
 	}
 
 	Uint32 render_flags = SDL_RENDERER_ACCELERATED;
 
 	SDL_Renderer* rend = SDL_CreateRenderer(window, -1, render_flags);
-	SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0xFF, 0x00, 0x00));
-	SDL_Texture* tex = SDL_CreateTextureFromSurface(rend, screenSurface); // Square Texture
-	SDL_FreeSurface(screenSurface);
+	SDL_SetRenderDrawColor(rend, 153, 153, 255, 255);
+	SDL_Surface *dinoSurface = IMG_Load("res/sprites/dinosheet.png");
+	SDL_Texture* dinoTex = SDL_CreateTextureFromSurface(rend, dinoSurface);
+	SDL_FreeSurface(dinoSurface);
 
-	SDL_Rect dest;
+	Dino dino;
+	dino.pos.w = 64;
+	dino.pos.h = 64;
+	dino.anims = getAnims("res/animdata/dino.dat");
+	dino.cAnim = &dino.anims[2];
+	unsigned char dinoFrame = 0;
 
-	// connects our texture with dest to control position
-	SDL_QueryTexture(tex, NULL, NULL, &dest.w, &dest.h);
+	// sets initial position of the dino
+	dino.pos.x = (scr_width - dino.pos.w) / 2;
+	dino.pos.y = (scr_height - dino.pos.h) / 2;
 
-	// sets initial position of object
-	dest.x = (scr_width - dest.w) / 2;
-	dest.y = (scr_height - dest.h) / 2;
-
-	int running = 1;
-
-	int speed = 300;
+	bool running = 1;
 
 	// animation loop
 	int starttime, endtime, deltatime;
 	while (running) {
 		SDL_Event event;
 		starttime = SDL_GetTicks();
+		dinoFrame = (starttime/(1000/dino.cAnim->fps)) % dino.cAnim->nFrames;
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_QUIT:
@@ -59,70 +88,19 @@ int main(int argc, char *argv[]) {
 					switch (event.key.keysym.scancode) {
 						case SDL_SCANCODE_W:
 						case SDL_SCANCODE_UP:
-							dest.y -= speed / 30;
-							break;
-						case SDL_SCANCODE_A:
-						case SDL_SCANCODE_LEFT:
-							dest.x -= speed / 30;
 							break;
 						case SDL_SCANCODE_S:
 						case SDL_SCANCODE_DOWN:
-							dest.y += speed / 30;
-							break;
-						case SDL_SCANCODE_D:
-						case SDL_SCANCODE_RIGHT:
-							dest.x += speed / 30;
-							break;
-						case SDL_SCANCODE_DELETE:
-							SDL_GetWindowSize(window, &scr_width, &scr_height);
-							switch (scr_width) {
-								case 1280:
-									SDL_SetWindowSize(window, 640, 480);
-									break;
-								case 640:
-									SDL_SetWindowSize(window, 1280, 720);
-									break;
-								default:
-									exit(1);
-							}
 							break;
 						default:
-							break;
-					}
-					break;
-				case SDL_WINDOWEVENT:
-					switch (event.window.event) {
-						case SDL_WINDOWEVENT_SIZE_CHANGED:
-							// Dummy printf because case statments have to start with expressions.
-							printf("");
-							int oW = scr_width, oH = scr_height;
-							SDL_GetWindowSize(window, &scr_width, &scr_height);
-							dest.x *= (scr_width / (float)oW);
-							dest.y *= (scr_height / (float)oH);
 							break;
 					}
 					break;
 			}
 		}
 
-		// right boundary
-		if (dest.x + dest.w > scr_width)
-			dest.x = scr_width - dest.w;
-
-		// left boundary
-		if (dest.x < 0)
-			dest.x = 0;
-
-		// bottom boundary
-		if (dest.y + dest.h > scr_height)
-			dest.y = scr_height - dest.h;
-
-		// upper boundary
-		if (dest.y < 0)
-			dest.y = 0;
-
 		SDL_RenderClear(rend);
-		SDL_RenderCopy(rend, tex, NULL, &dest);
+		SDL_RenderCopy(rend, dinoTex, &dino.cAnim->frames[dinoFrame], &dino.pos);
 
 		// triggers the double buffers
 		// for multiple rendering
@@ -139,7 +117,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Cleanup
-	SDL_DestroyTexture(tex);
+	SDL_DestroyTexture(dinoTex);
 	SDL_DestroyRenderer(rend);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
