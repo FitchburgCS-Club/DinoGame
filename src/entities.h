@@ -1,6 +1,10 @@
 #ifndef ENTITIES_H
 #define ENTITIES_H
+#ifdef __unix__
 #include <SDL2/SDL.h>
+#else
+#include <SDL.h>
+#endif
 #include <stdbool.h>
 
 typedef struct {

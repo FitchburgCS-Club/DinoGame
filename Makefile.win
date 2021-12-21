@@ -1,0 +1,11 @@
+CFLAGS = /D _CRT_SECURE_NO_WARNINGS /W4 /I $(LIBRARIES)\SDL2\include /I $(LIBRARIES)\SDL2_Image\include
+LIBRARIES = %%userprofile%%\libs
+
+{src\}.c.obj:
+  $(CC) -c $(CFLAGS) $<
+
+dinogame.exe: main.obj
+	LINK /LIBPATH:$(LIBRARIES)\SDL2\lib\x64 /LIBPATH:$(LIBRARIES)\SDL2_Image\lib\x64 /ENTRY:SDL_main /SUBSYSTEM:WINDOWS -out:dinogame.exe main.obj SDL2.lib SDL2_image.lib ucrt.lib OneCoreUap.lib
+
+clean:
+	del *.obj dinogame.exe

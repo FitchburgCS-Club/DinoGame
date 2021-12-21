@@ -34,4 +34,15 @@ Add ``-j<num>`` to build with multiple threads
 
 If you want to install, simply ``sudo make install``
 #### Windows
-TBD
+Ensure you have these things installed from the Visual Studio Installer
+- Windows 10 SDK
+- Windows Universal CRT SDK
+- MSVC
+
+Open ``Makefile.win`` and set the directory your SDL libraries are in. (The Makefile expects SDL2 and SDL2_Image folders in the place you specify)
+
+- Open "x64 Native Tools Command Prompt"
+- Navigate to the repo directory
+- run ``nmake /f Makefile.win``
+
+To clean, run ``nmake clean /f Makefile.win``

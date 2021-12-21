@@ -1,8 +1,15 @@
+#ifdef __unix__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_timer.h>
+#else
+#include <SDL.h>
+#include <SDL_image.h>
+#include <SDL_timer.h>
+#endif
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "entities.h"
 #include "errors.h"
 #include "macros.h"
