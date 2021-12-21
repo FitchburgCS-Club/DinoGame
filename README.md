@@ -20,8 +20,11 @@ Yes, Windows, Mac, and Linux.
 It will be a good learning experience.
 ### How do I build this?
 #### \*nix Systems
-``export CFLAGS=;./configure``
-Put any extra CFLAGS you want after the "=". If you don't want any, leave it blank.
+`./configure`
+Pay attention to make sure your compiler isn't being silly and putting in extra CFLAGS even though you literally never asked it to anywhere. (This happens on my desktop).
+If it does, do this.
+``export CFLAGS="" ./configure``
+You can also put any extra CFLAGS in the quotes if you want any.
 
 If you want to enable debug builds, add ``--enable-debug=yes`` to the end of the command.
 
