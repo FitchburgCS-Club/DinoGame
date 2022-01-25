@@ -18,5 +18,7 @@ typedef struct {
   SDL_Rect pos;
   Animation *cAnim;
   bool jumping;
+	int jumpStart;
+  bool ducking;
 } Dino;
 #endif

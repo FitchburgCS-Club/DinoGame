@@ -16,6 +16,10 @@
 
 #define FPS 60
 
+Dino dino;
+
+bool running = 1;
+
 Animation *getAnims(char *path) {
 	FILE *animFile = fopen(path, "r");
 	if (animFile == NULL) {
@@ -33,6 +37,26 @@ Animation *getAnims(char *path) {
 	}
 	return anims;
 }
+
+void lerpY(SDL_Rect *out, SDL_Rect *start, SDL_Rect *end, float f) {
+	out->y = (float)start->y + ((float)end->y - (float)start->y) * f;
+}
+
+SDL_Rect jumpRect = {
+	0,
+	150,
+	0,
+	0
+};
+
+SDL_Rect groundRect = {
+	0,
+	208,
+	0,
+	0
+};
+
+const int jumpTimeLength = 1000; // NOTE(Michael): Total number of ticks jummping takes to complete
 
 int main(int argc, char *argv[]) {
 	// TODO: Add menu of some kind to change window size
@@ -66,45 +90,88 @@ int main(int argc, char *argv[]) {
 	SDL_Texture* dinoTex = SDL_CreateTextureFromSurface(rend, dinoSurface);
 	SDL_FreeSurface(dinoSurface);
 
-	Dino dino;
 	dino.pos.w = 64;
 	dino.pos.h = 64;
 	dino.anims = getAnims("res/animdata/dino.dat");
 	dino.cAnim = &dino.anims[2];
+	dino.jumping = 0;
+	dino.ducking = 0;
 	unsigned char dinoFrame = 0;
 
 	// sets initial position of the dino
 	dino.pos.x = (scr_width - dino.pos.w) / 2;
 	dino.pos.y = (scr_height - dino.pos.h) / 2;
 
-	bool running = 1;
-
 	// animation loop
 	int starttime, endtime, deltatime;
+	SDL_Event event;
 	while (running) {
-		SDL_Event event;
-		starttime = SDL_GetTicks();
-		dinoFrame = (starttime/(1000/dino.cAnim->fps)) % dino.cAnim->nFrames;
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
-				case SDL_QUIT:
+			case SDL_QUIT:
 					running = 0;
 					break;
-
-				case SDL_KEYDOWN:
-					switch (event.key.keysym.scancode) {
-						case SDL_SCANCODE_W:
-						case SDL_SCANCODE_UP:
-							break;
-						case SDL_SCANCODE_S:
-						case SDL_SCANCODE_DOWN:
-							break;
-						default:
-							break;
+			case SDL_KEYDOWN:
+				switch (event.key.keysym.scancode) {
+				case SDL_SCANCODE_W:
+				case SDL_SCANCODE_UP:
+					dino.jumping = 1;
+					dino.jumpStart = SDL_GetTicks();
+					dino.jumpEnd = dino.jumpStart + jumpTimeLength;
+					break;
+				case SDL_SCANCODE_S:
+				case SDL_SCANCODE_DOWN:
+					if (!dino.ducking) {
+						dino.ducking = 1;
 					}
 					break;
+				default:
+					break;
+				}
+				break;
+			case SDL_KEYUP:
+				switch (event.key.keysym.scancode) {
+				case SDL_SCANCODE_DOWN:
+					dino.ducking = 0;
+					break;
+				default:
+					break;
+				}
+				break;
 			}
 		}
+		
+		if (dino.ducking && !dino.jumping) {
+			dino.cAnim = &dino.anims[0];
+		} else {
+			dino.cAnim = &dino.anims[2];
+		}
+
+		if (dino.jumping) {
+			int current = SDL_GetTicks();
+			
+			float factor = ((float)(current - dino.jumpStart))/jumpTimeLength;
+			// NOTE(Michael): we want to move up, and then move back down.
+			// So factor [0, 0.5) is mapped to the range [0, 1]
+			// and factor (0.5, 1] is mapped to the range [1, 0]
+
+			if (factor >= 1) { // End if we're past our range
+				dino.pos.y = groundRect.y;
+				dino.jumping = 0;
+			}
+			else {
+				if (factor >= 0.5) {
+					factor = 0.5 * 2 - (factor - 0.5) * 2; // maps (0.5, 1] to [1, 0]
+				}
+				else {
+					factor *= 2; // maps [0, 0.5) to [0, 1]
+				}
+				lerpY(&dino.pos, &groundRect, &jumpRect, factor);
+			}
+		}
+		
+		starttime = SDL_GetTicks();
+		dinoFrame = (starttime/(1000/dino.cAnim->fps)) % dino.cAnim->nFrames;
 
 		SDL_RenderClear(rend);
 		SDL_RenderCopy(rend, dinoTex, &dino.cAnim->frames[dinoFrame], &dino.pos);
