@@ -117,7 +117,6 @@ int main(int argc, char *argv[]) {
 				case SDL_SCANCODE_UP:
 					dino.jumping = 1;
 					dino.jumpStart = SDL_GetTicks();
-					dino.jumpEnd = dino.jumpStart + jumpTimeLength;
 					break;
 				case SDL_SCANCODE_S:
 				case SDL_SCANCODE_DOWN:
